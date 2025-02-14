@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Блог</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <button class='auth-btn'>Log in</button>
+    </header>
+
+    <div class="auth-forms">
+        <form id="registerForm" class="authForm">
+            <h2>Регистрация</h2>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Пароль" required>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+
+        <form id="otpForm" class="authForm">
+            <h2>Подтверждение OTP</h2>
+            <!-- <input type="email" id="otpEmail" placeholder="Email" required> -->
+            <input type="text" id="otpCode" placeholder="OTP код" required>
+            <button type="submit">Подтвердить</button>
+        </form>
+
+
+        <form id="loginForm"class="authForm" >
+            <h2>Вход</h2>
+            <input type="email" id="loginEmail" placeholder="Email" required>
+            <input type="password" id="loginPassword" placeholder="Пароль" required>
+            <button type="submit">Войти</button>
+        </form>
+    </div>
+
+    <div class="posts-container" class="authForm">
+        <form id="postForm">
+            <h2>Добавить пост</h2>
+            <input type="text" id="title" placeholder="Заголовок" required>
+            <textarea id="content" placeholder="Содержание" required></textarea>
+            <button type="submit">Опубликовать</button>
+        </form>
+        <h2>Посты</h2>
+        <div id="posts"></div>
+
+    </div>
+
+
+</body>
+<script defer src="script.js"></script>
+</body>
+
+</html>

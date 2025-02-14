@@ -1,0 +1,109 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: #fff6ea;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  background-color: rgb(243, 191, 230);
+}
+
+header {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  padding: 0 30px 0 30px;
+
+}
+
+.posts-container {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.auth-forms {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  display: none;
+}
+.authForm {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.authForm input {
+  width: 40%;
+}
+.authForm button {
+  width: 25%;
+}
+input,
+button {
+  /* width: 100%; */
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 4px;
+}
+
+input {
+  border: 1px solid #ccc;
+}
+button {
+  background: #df88d7;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #e06ed4;
+}
+
+#postForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.post {
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
+  width: 100%;
+}
+
+textarea {
+  height: 150px;
+  padding: 8px;
+  
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.overlay.active {
+  visibility: visible;
+  opacity: 1;
+}
