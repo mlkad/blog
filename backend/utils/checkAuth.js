@@ -1,24 +1,23 @@
-import jwt from 'jsonwebtoken';
+// utils/checkAuth.js
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-export default (req, res, next) => {
-  const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
-
-  if (!token) {
-    return res.status(403).json({ message: "Нет доступа" });
-  }
-
+export default async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const now = Math.floor(Date.now() / 1000);
-
-    // Если до истечения токена осталось менее 20 минут – просим войти заново
-    if (decoded.exp - now < 1200) {
-      return res.status(401).json({ message: "Сессия истекла, войдите заново" });
+    const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+    if (!token) {
+      return res.status(403).json({ message: "Нет доступа" });
     }
-
-    req.userId = decoded._id; // используем _id, как указано при генерации токена
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Ищем пользователя в базе
+    const user = await User.findById(decoded._id);
+    // Сравниваем sessionId из токена с сохраненным в БД
+    if (!user || user.sessionId !== decoded.sessionId) {
+      return res.status(403).json({ message: "Сессия недействительна" });
+    }
+    req.userId = decoded._id;
     next();
-  } catch (e) {
+  } catch (err) {
     return res.status(403).json({ message: "Нет доступа" });
   }
 };

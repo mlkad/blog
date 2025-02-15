@@ -9,6 +9,8 @@ const UserSchema = new mongoose.Schema({
   token: { type: String, default: null },
   fullName: { type: String },
   avatarUrl: { type: String },
+  refreshToken: { type: String, default: null },
+  sessionId: { type: String, default: null } 
 });
 
 export default mongoose.model('User', UserSchema);

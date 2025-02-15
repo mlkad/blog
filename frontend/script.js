@@ -1,8 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
   const apiUrl = "http://localhost:4404";
   
-  function getToken() {
+  function getAccessToken() {
     return localStorage.getItem("token");
+  }
+  
+  function getRefreshToken() {
+    return localStorage.getItem("refreshToken");
   }
   
   function getUserId() {
@@ -44,8 +48,10 @@ document.addEventListener("DOMContentLoaded", () => {
       body: JSON.stringify({ otp }),
     });
     const data = await response.json();
-    if (data.token) {
-      localStorage.setItem("token", data.token);
+    if (data.accessToken) {
+      localStorage.setItem("token", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("userId", data.userId || "");
       alert("OTP подтвержден, вы вошли!");
     } else {
       alert(data.message);
@@ -64,21 +70,52 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   
     const data = await response.json();
-    if (data.token) {
-      localStorage.setItem("token", data.token);
+    if (data.accessToken) {
+      localStorage.setItem("token", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("userId", data.userId); 
       alert("Вход выполнен!");
     } else {
       alert(data.message);
     }
     console.log("userId:", localStorage.getItem("userId"));
-
   });
-  
 
+  // Функция обновления токенов (можно привязать к кнопке или вызывать автоматически)
+  async function refreshTokens() {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      alert("Нет refresh токена!");
+      return;
+    }
+    const response = await fetch(`${apiUrl}/auth/refresh-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    const data = await response.json();
+    if (data.accessToken && data.refreshToken) {
+      localStorage.setItem("token", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      alert("Токены успешно обновлены!");
+    } else {
+      alert(data.message);
+    }
+  }
+
+  // Пример: привязываем обновление токенов к кнопке (не забудьте добавить её в HTML)
+  const refreshBtn = document.getElementById("refreshTokenBtn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      refreshTokens();
+    });
+  }
+  
+  // Остальной код для работы с постами остается без изменений
   document.getElementById("postForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const token = getToken();
+    const token = getAccessToken();
     if (!token) {
       alert("Вы не авторизованы!");
       return;
@@ -112,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   async function loadPosts() {
-    const token = getToken();
+    const token = getAccessToken();
     if (!token) {
       console.log("Пользователь не авторизован");
       return;
@@ -149,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const newText = prompt("Введите новый текст:", oldText);
     if (!newText) return;
   
-    const token = getToken();
+    const token = getAccessToken();
     if (!token) {
       alert("Вы не авторизованы!");
       return;
@@ -180,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   window.deletePost = async function (id) {
-    const token = getToken();
+    const token = getAccessToken();
     const response = await fetch(`${apiUrl}/posts/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -196,6 +233,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  
   loadPosts();
 });
