@@ -1,16 +1,72 @@
 document.addEventListener("DOMContentLoaded", () => {
   const apiUrl = "http://localhost:4404";
-  
+
+  // Функции получения токенов и userId из localStorage
   function getAccessToken() {
     return localStorage.getItem("token");
   }
-  
+
   function getRefreshToken() {
     return localStorage.getItem("refreshToken");
   }
-  
+
   function getUserId() {
     return localStorage.getItem("userId");
+  }
+
+  // Функция обновления токенов через endpoint /auth/refresh-token
+  async function refreshTokens() {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      alert("Нет refresh токена!");
+      return false;
+    }
+    const response = await fetch(`${apiUrl}/auth/refresh-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    const data = await response.json();
+    if (data.accessToken && data.refreshToken) {
+      localStorage.setItem("token", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      console.log("Токены успешно обновлены!");
+      return true;
+    } else {
+      alert(data.message || "Ошибка при обновлении токенов");
+      return false;
+    }
+  }
+
+  /**
+   * Обёртка для fetch, которая добавляет access-token в заголовки.
+   * Если получаем 401, пытаемся обновить токены и повторить запрос.
+   */
+  async function authFetch(url, options = {}) {
+    let accessToken = getAccessToken();
+    options.headers = options.headers || {};
+    options.headers.Authorization = `Bearer ${accessToken}`;
+
+    let response = await fetch(url, options);
+
+    // Если access token недействителен, пробуем обновить его
+    if (response.status === 401) {
+      console.log("Access token недействителен, пытаемся обновить...");
+      const refreshed = await refreshTokens();
+      if (refreshed) {
+        // Обновляем заголовок и повторяем запрос
+        accessToken = getAccessToken();
+        options.headers.Authorization = `Bearer ${accessToken}`;
+        response = await fetch(url, options);
+      } else {
+        // Если обновление не удалось — очищаем данные и просим войти заново
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userId");
+        alert("Ваша сессия истекла. Пожалуйста, войдите заново.");
+      }
+    }
+    return response;
   }
 
   const authForms = document.querySelector(".auth-forms");
@@ -24,6 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
       postsContainer.style.display === "block" ? "none" : "block";
   });
 
+  // Регистрация
   document
     .getElementById("registerForm")
     .addEventListener("submit", async (e) => {
@@ -39,6 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert(data.message);
     });
 
+  // Верификация OTP
   document.getElementById("otpForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const otp = document.getElementById("otpCode").value;
@@ -58,22 +116,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Вход
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("loginEmail").value;
     const password = document.getElementById("loginPassword").value;
-  
+
     const response = await fetch(`${apiUrl}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-  
+
     const data = await response.json();
     if (data.accessToken) {
       localStorage.setItem("token", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("userId", data.userId); 
+      localStorage.setItem("userId", data.userId);
       alert("Вход выполнен!");
     } else {
       alert(data.message);
@@ -81,29 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("userId:", localStorage.getItem("userId"));
   });
 
-  // Функция обновления токенов (можно привязать к кнопке или вызывать автоматически)
-  async function refreshTokens() {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) {
-      alert("Нет refresh токена!");
-      return;
-    }
-    const response = await fetch(`${apiUrl}/auth/refresh-token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
-    const data = await response.json();
-    if (data.accessToken && data.refreshToken) {
-      localStorage.setItem("token", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      alert("Токены успешно обновлены!");
-    } else {
-      alert(data.message);
-    }
-  }
-
-  // Пример: привязываем обновление токенов к кнопке (не забудьте добавить её в HTML)
+  // Если кнопка для ручного обновления существует, оставляем её
   const refreshBtn = document.getElementById("refreshTokenBtn");
   if (refreshBtn) {
     refreshBtn.addEventListener("click", (e) => {
@@ -111,8 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
       refreshTokens();
     });
   }
-  
-  // Остальной код для работы с постами остается без изменений
+
+  // Работа с постами
   document.getElementById("postForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const token = getAccessToken();
@@ -123,12 +160,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const title = document.getElementById("title").value;
     const content = document.getElementById("content").value;
 
-    const response = await fetch(`${apiUrl}/posts`, {
+    const response = await authFetch(`${apiUrl}/posts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
+        // Заголовок Authorization добавится автоматически
       },
       body: JSON.stringify({
         title,
@@ -155,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const response = await fetch(`${apiUrl}/posts`);
+    const response = await authFetch(`${apiUrl}/posts`);
     const posts = await response.json();
     const postsContainer = document.getElementById("posts");
     postsContainer.innerHTML = "";
@@ -165,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     posts.forEach((post) => {
       console.log("Автор поста:", post.user ? post.user._id : "Нет автора");
-  
+
       const isAuthor = post.user && post.user._id === currentUserId;
       postsContainer.innerHTML += `
       <div class="post" id="post-${post._id}">
@@ -175,28 +212,21 @@ document.addEventListener("DOMContentLoaded", () => {
             <button onclick="editPost('${post._id}', '${post.title}', '${post.text}')">Редактировать</button>
             <button onclick="deletePost('${post._id}')">Удалить</button>
           ` : ""}
-      </div>`;      
+      </div>`;
     });
   }
 
   window.editPost = async function editPost(postId, oldTitle, oldText) {
     const newTitle = prompt("Введите новый заголовок:", oldTitle);
     if (!newTitle) return;
-  
+
     const newText = prompt("Введите новый текст:", oldText);
     if (!newText) return;
-  
-    const token = getAccessToken();
-    if (!token) {
-      alert("Вы не авторизованы!");
-      return;
-    }
-  
-    const response = await fetch(`${apiUrl}/posts/${postId}`, {
+
+    const response = await authFetch(`${apiUrl}/posts/${postId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: newTitle,
@@ -205,22 +235,20 @@ document.addEventListener("DOMContentLoaded", () => {
         tags: "",
       }),
     });
-  
+
     const data = await response.json();
-  
+
     if (data.success) {
       alert("Пост обновлён!");
-      loadPosts(); 
+      loadPosts();
     } else {
       alert("Ошибка при обновлении поста");
     }
-  }
-  
+  };
+
   window.deletePost = async function (id) {
-    const token = getAccessToken();
-    const response = await fetch(`${apiUrl}/posts/${id}`, {
+    const response = await authFetch(`${apiUrl}/posts/${id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     const result = await response.json();
