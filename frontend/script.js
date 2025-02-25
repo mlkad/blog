@@ -13,6 +13,27 @@ document.addEventListener("DOMContentLoaded", () => {
   function getUserId() {
     return localStorage.getItem("userId");
   }
+  function updateAuthButton() {
+    const userId = getUserId();
+    authBtn.removeEventListener("click", showAuthPanel);
+    authBtn.removeEventListener("click", showProfile);
+
+    if (userId) {
+        authBtn.textContent = "Profile";
+        authBtn.addEventListener("click", showProfile);
+    } else {
+        authBtn.textContent = "Login";
+        authBtn.addEventListener("click", showAuthPanel);
+    }
+}
+
+function showProfile() {
+    showPanel("profile");
+}
+
+  function showAuthPanel() {
+    showPanel("auth");
+  }
 
   // Функция обновления токенов через endpoint /auth/refresh-token
   async function refreshTokens() {
@@ -70,16 +91,38 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const authForms = document.querySelector(".auth-forms");
-  const toggleAuthBtn = document.querySelector(".auth-btn");
   const postsContainer = document.querySelector(".posts-container");
+  const authBtn = document.querySelector(".auth-btn");
+  const postsBtn = document.querySelector(".posts-btn");
+  
+  // Функция для показа определенной панели и скрытия других
+  function showPanel(panel) {
+    document.querySelector(".auth-forms").style.display = panel === "auth" ? "block" : "none";
+    document.querySelector(".posts-container").style.display = panel === "posts" ? "block" : "none";
+    document.querySelector(".profile").style.display = panel === "profile" ? "block" : "none";
+}
 
-  toggleAuthBtn.addEventListener("click", () => {
-    authForms.style.display =
-      authForms.style.display === "none" ? "block" : "none";
-    postsContainer.style.display =
-      postsContainer.style.display === "block" ? "none" : "block";
+  
+  // Переключение на панель аутентификации
+  authBtn.addEventListener("click", () => {
+    showPanel("auth");
   });
-
+  
+  // Переключение на панель постов
+  postsBtn.addEventListener("click", () => {
+    showPanel("posts");
+  });
+  
+  // При загрузке страницы показать форму авторизации, если пользователь не залогинен
+  document.addEventListener("DOMContentLoaded", () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      showPanel("posts"); // Показываем посты, если пользователь авторизован
+    } else {
+      showPanel("auth"); // Иначе показываем авторизацию
+    }
+  });
+  
   // Регистрация
   document
     .getElementById("registerForm")
@@ -117,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Вход
-  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("loginEmail").value;
     const password = document.getElementById("loginPassword").value;
@@ -134,20 +177,14 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("userId", data.userId);
       alert("Вход выполнен!");
+      updateAuthButton(); // Обновить кнопку после входа
     } else {
       alert(data.message);
     }
-    console.log("userId:", localStorage.getItem("userId"));
   });
 
-  // Если кнопка для ручного обновления существует, оставляем её
-  const refreshBtn = document.getElementById("refreshTokenBtn");
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      refreshTokens();
-    });
-  }
+  updateAuthButton(); 
+
 
   // Работа с постами
   document.getElementById("postForm").addEventListener("submit", async (e) => {

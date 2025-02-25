@@ -15,7 +15,6 @@ dotenv.config({ path: "./backend/.env" });
 
 // Подключение к MongoDB
 mongoose
-
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Подключено к базе данных"))
   .catch((err) => console.error("❌ Ошибка подключения к БД:", err));
