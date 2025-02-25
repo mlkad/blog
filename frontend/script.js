@@ -1,6 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
   const apiUrl = "http://localhost:4404";
-
+  const token = localStorage.getItem("token");
+  if (token) {
+    showPanel("posts"); // Показываем посты, если пользователь авторизован
+  } else {
+    showPanel("auth"); // Иначе показываем авторизацию
+  }
   // Функции получения токенов и userId из localStorage
   function getAccessToken() {
     return localStorage.getItem("token");
@@ -13,25 +18,25 @@ document.addEventListener("DOMContentLoaded", () => {
   function getUserId() {
     return localStorage.getItem("userId");
   }
+
   function updateAuthButton() {
     const userId = getUserId();
     authBtn.removeEventListener("click", showAuthPanel);
     authBtn.removeEventListener("click", showProfile);
 
     if (userId) {
-        authBtn.textContent = "Profile";
-        authBtn.addEventListener("click", showProfile);
+      authBtn.textContent = "Profile";
+      authBtn.addEventListener("click", showProfile);
     } else {
-        authBtn.textContent = "Login";
-        authBtn.addEventListener("click", showAuthPanel);
+      authBtn.textContent = "Login";
+      authBtn.addEventListener("click", showAuthPanel);
     }
-}
+  }
 
-function showProfile() {
-  showPanel("profile");
-  loadUserProfile();
-}
-
+  function showProfile() {
+    showPanel("profile");
+    loadUserProfile(); // Загружаем данные профиля
+  }
 
   function showAuthPanel() {
     showPanel("auth");
@@ -61,10 +66,7 @@ function showProfile() {
     }
   }
 
-  /**
-   * Обёртка для fetch, которая добавляет access-token в заголовки.
-   * Если получаем 401, пытаемся обновить токены и повторить запрос.
-   */
+  // Обёртка для fetch, которая добавляет access-token в заголовки
   async function authFetch(url, options = {}) {
     let accessToken = getAccessToken();
     options.headers = options.headers || {};
@@ -98,25 +100,29 @@ function showProfile() {
   const authBtn = document.querySelector(".auth-btn");
   const postsBtn = document.querySelector(".posts-btn");
   const logoutBtn = document.querySelector(".logout-btn");
-  
+
   // Функция для показа определенной панели и скрытия других
   function showPanel(panel) {
-    document.querySelector(".auth-forms").style.display = panel === "auth" ? "block" : "none";
-    document.querySelector(".posts-container").style.display = panel === "posts" ? "block" : "none";
-    document.querySelector(".profile").style.display = panel === "profile" ? "block" : "none";
-}
+    document.querySelector(".auth-forms").style.display =
+      panel === "auth" ? "block" : "none";
+    document.querySelector(".posts-container").style.display =
+      panel === "posts" ? "block" : "none";
+    document.querySelector(".profile").style.display =
+      panel === "profile" ? "block" : "none";
+  }
 
-logoutBtn.addEventListener("click", logoutUser);
+  logoutBtn.addEventListener("click", logoutUser);
+
   // Переключение на панель аутентификации
   authBtn.addEventListener("click", () => {
     showPanel("auth");
   });
-  
+
   // Переключение на панель постов
   postsBtn.addEventListener("click", () => {
     showPanel("posts");
   });
-  
+
   // При загрузке страницы показать форму авторизации, если пользователь не залогинен
   document.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem("token");
@@ -126,6 +132,7 @@ logoutBtn.addEventListener("click", logoutUser);
       showPanel("auth"); // Иначе показываем авторизацию
     }
   });
+
   function logoutUser() {
     // Удаляем данные пользователя из localStorage
     localStorage.removeItem("token");
@@ -139,22 +146,35 @@ logoutBtn.addEventListener("click", logoutUser);
     showPanel("auth");
 
     alert("Вы вышли из системы");
-}
-async function loadUserProfile() {
-  const userId = getUserId();
-  if (!userId) {
-      console.log("Пользователь не авторизован");
-      return;
   }
 
-  const response = await authFetch(`${apiUrl}/users/${userId}`);
-  if (response.ok) {
+  async function loadUserProfile() {
+    try {
+      const userId = getUserId();
+      if (!userId) {
+        console.log("Пользователь не авторизован");
+        return;
+      }
+  
+      const response = await authFetch(`${apiUrl}/users/${userId}`);
+      if (!response.ok) {
+        throw new Error("Ошибка загрузки профиля");
+      }
+  
       const userData = await response.json();
+      console.log("Данные пользователя:", userData); // Проверьте данные
       document.getElementById("userEmail").textContent = userData.email;
-  } else {
-      console.log("Ошибка загрузки профиля");
+    } catch (error) {
+      console.error("Ошибка:", error);
+      alert("Не удалось загрузить данные профиля.");
+    }
   }
-}
+  
+  function showProfile() {
+    console.log("Показ профиля..."); // Проверка вызова
+    showPanel("profile");
+    loadUserProfile();
+  }
 
   // Регистрация
   document
@@ -193,7 +213,7 @@ async function loadUserProfile() {
   });
 
   // Вход
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("loginEmail").value;
     const password = document.getElementById("loginPassword").value;
@@ -216,8 +236,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     }
   });
 
-  updateAuthButton(); 
-
+  updateAuthButton();
 
   // Работа с постами
   document.getElementById("postForm").addEventListener("submit", async (e) => {
@@ -234,8 +253,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json"
-        // Заголовок Authorization добавится автоматически
+        Accept: "application/json",
       },
       body: JSON.stringify({
         title,
@@ -278,10 +296,14 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       <div class="post" id="post-${post._id}">
           <h3>${post.title}</h3>
           <p>${post.text}</p>
-          ${isAuthor ? `
+          ${
+            isAuthor
+              ? `
             <button onclick="editPost('${post._id}', '${post.title}', '${post.text}')">Редактировать</button>
             <button onclick="deletePost('${post._id}')">Удалить</button>
-          ` : ""}
+          `
+              : ""
+          }
       </div>`;
     });
   }
