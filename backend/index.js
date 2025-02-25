@@ -11,10 +11,11 @@ import authRoutes from "./routes/auth.js"; // ✅ Исправлено!
 import userRoutes from "./routes/users.js";
 import postRoutes from "./routes/posts.js";
 
-dotenv.config();
+dotenv.config({ path: "./backend/.env" });
 
 // Подключение к MongoDB
 mongoose
+
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Подключено к базе данных"))
   .catch((err) => console.error("❌ Ошибка подключения к БД:", err));
@@ -67,5 +68,5 @@ app.listen(PORT, (err) => {
 const __dirname = path.resolve();
 app.use(express.static(path.join(__dirname, "frontend", "build")));
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend", "build", "index.html"));
+  res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
