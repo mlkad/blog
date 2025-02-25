@@ -31,19 +31,23 @@
         </form>
 
 
-        <form id="loginForm"class="authForm" >
+        <form id="loginForm" class="authForm">
             <h2>Вход</h2>
             <input type="email" id="loginEmail" placeholder="Email" required>
             <input type="password" id="loginPassword" placeholder="Пароль" required>
             <button type="submit">Войти</button>
         </form>
 
-        <div class="profile">
-            <h2>Your profile</h2>
-            <span>Email:</span>
-        </div>
+
     </div>
 
+    <div class="profile">
+        <h2>Your profile</h2>
+        <span>Email: <span id="userEmail"></span></span>
+        <button class="logout-btn">Log out</button>
+    </div>
+    
+    
     <div class="posts-container" class="authForm">
         <form id="postForm">
             <h2>Добавить пост</h2>

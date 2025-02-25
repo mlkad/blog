@@ -28,8 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
 }
 
 function showProfile() {
-    showPanel("profile");
+  showPanel("profile");
+  loadUserProfile();
 }
+
 
   function showAuthPanel() {
     showPanel("auth");
@@ -92,8 +94,10 @@ function showProfile() {
 
   const authForms = document.querySelector(".auth-forms");
   const postsContainer = document.querySelector(".posts-container");
+
   const authBtn = document.querySelector(".auth-btn");
   const postsBtn = document.querySelector(".posts-btn");
+  const logoutBtn = document.querySelector(".logout-btn");
   
   // Функция для показа определенной панели и скрытия других
   function showPanel(panel) {
@@ -102,7 +106,7 @@ function showProfile() {
     document.querySelector(".profile").style.display = panel === "profile" ? "block" : "none";
 }
 
-  
+logoutBtn.addEventListener("click", logoutUser);
   // Переключение на панель аутентификации
   authBtn.addEventListener("click", () => {
     showPanel("auth");
@@ -122,7 +126,36 @@ function showProfile() {
       showPanel("auth"); // Иначе показываем авторизацию
     }
   });
-  
+  function logoutUser() {
+    // Удаляем данные пользователя из localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userId");
+
+    // Обновляем кнопку авторизации
+    updateAuthButton();
+
+    // Показываем экран входа
+    showPanel("auth");
+
+    alert("Вы вышли из системы");
+}
+async function loadUserProfile() {
+  const userId = getUserId();
+  if (!userId) {
+      console.log("Пользователь не авторизован");
+      return;
+  }
+
+  const response = await authFetch(`${apiUrl}/users/${userId}`);
+  if (response.ok) {
+      const userData = await response.json();
+      document.getElementById("userEmail").textContent = userData.email;
+  } else {
+      console.log("Ошибка загрузки профиля");
+  }
+}
+
   // Регистрация
   document
     .getElementById("registerForm")
